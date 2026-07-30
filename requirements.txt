@@ -1,0 +1,18 @@
+# Cekirdek bagimliliklar
+numpy>=1.24
+scipy>=1.10
+pandas>=1.5
+scikit-learn>=1.2
+matplotlib>=3.6
+nibabel>=5.0
+
+# Sinir agi (CPU surumu yeterli). Windows'ta duz "pip install torch" zaten
+# CPU surumunu kurar. Linux'ta CPU-only istersen:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.0
+
+# Rapor tablolarini markdown olarak yazmak icin (opsiyonel)
+tabulate>=0.9
+
+# Veri indirmek icin (opsiyonel; AWS CLI veya DataLad da kullanilabilir)
+openneuro-py>=2023.1

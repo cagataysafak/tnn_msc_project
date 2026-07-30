@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Karistiricilardan arindirma etkisi -- schz\_keepghost. Guven araliklari fold bagimliligina gore duzeltilmistir.}
+  \label{tab:deconf_schz_keepghost}
+  \small
+  \begin{tabular}{lllrl}
+    \toprule
+    method & dengeli dogruluk [\%95 GA] & macro F1 & AUC & p (sans) \\
+    \midrule
+    Tucker+MLP & 0.701 [0.619, 0.782] & 0.685 $\pm$ 0.056 & 0.766 & $<$0.001 \\
+    Tucker(arinmis)+MLP & 0.637 [0.544, 0.730] & 0.611 $\pm$ 0.102 & 0.671 & 0.0034 \\
+    Demo+LogReg & 0.693 [0.606, 0.781] & 0.668 $\pm$ 0.065 & 0.758 & $<$0.001 \\
+    Tucker+Demo+MLP & 0.694 [0.611, 0.777] & 0.675 $\pm$ 0.069 & 0.764 & $<$0.001 \\
+    Dummy(cogunluk) & 0.500 [0.500, 0.500] & 0.417 $\pm$ 0.000 & 0.500 & 1.0000 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

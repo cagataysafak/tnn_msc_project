@@ -1,0 +1,14 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Tarayici-disi genelleme (leave-one-scanner-out) -- schz\_keepghost. Birincil olcut AUC; dengeli dogruluk onsel kaymasina duyarlidir.}
+  \label{tab:loso_schz_keepghost}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    test\_scanner & n\_train & n\_test & balanced\_accuracy & balanced\_accuracy\_prior\_adj & f1\_macro & auc \\
+    \midrule
+    35343.000 & 48.000 & 127.000 & 0.717 & 0.647 & 0.665 & 0.739 \\
+    35426.000 & 127.000 & 48.000 & 0.673 & 0.704 & 0.661 & 0.758 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

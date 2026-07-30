@@ -1,0 +1,6 @@
+data/
+derivatives/
+derivatives_ghost/
+__pycache__/
+*.pyc
+.venv/

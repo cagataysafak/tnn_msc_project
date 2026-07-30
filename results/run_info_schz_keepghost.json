@@ -1,0 +1,41 @@
+{
+  "task": "schz_vs_control",
+  "classes": [
+    "CONTROL",
+    "SCHZ"
+  ],
+  "n_subjects": 175,
+  "class_counts": {
+    "CONTROL": 125,
+    "SCHZ": 50
+  },
+  "tensor_shape": [
+    175,
+    64,
+    64,
+    64
+  ],
+  "tucker_ranks": [
+    8,
+    8,
+    8
+  ],
+  "n_tucker_features": 512,
+  "cv": "5-fold x 3",
+  "nn_backend": "PyTorch 2.13.0+cpu",
+  "mlp_params": {
+    "hidden": [
+      128,
+      32
+    ],
+    "dropout": 0.4,
+    "lr": 0.001,
+    "weight_decay": 0.001,
+    "batch_size": 32,
+    "max_epochs": 300,
+    "patience": 30,
+    "val_fraction": 0.15
+  },
+  "seed": 42,
+  "runtime_sec": 116.3
+}

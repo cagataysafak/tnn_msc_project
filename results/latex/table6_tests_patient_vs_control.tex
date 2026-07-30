@@ -1,0 +1,16 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Eslesmis karsilastirmalar, macro F1 -- patient\_vs\_control}
+  \label{tab:tests_patient_vs_control}
+  \small
+  \begin{tabular}{llrrrrrr}
+    \toprule
+    A & B & mean\_diff & cohens\_d & p\_corrected\_ttest & p\_ttest\_holm & p\_wilcoxon & p\_wilcoxon\_holm \\
+    \midrule
+    Tucker+MLP & Tucker+LogReg & -0.0707 & -0.6895 & 0.2159 & 0.7681 & 0.0042 & 0.0125 \\
+    Tucker+MLP & PCA+MLP & 0.0585 & 0.4631 & 0.4018 & 0.8035 & 0.0164 & 0.0328 \\
+    Tucker+MLP & Voxel-MLP & -0.0776 & -0.7283 & 0.1920 & 0.7681 & 0.0015 & 0.0061 \\
+    Tucker+MLP & Dummy & 0.0107 & 0.0831 & 0.8796 & 0.8796 & 0.7712 & 0.7712 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

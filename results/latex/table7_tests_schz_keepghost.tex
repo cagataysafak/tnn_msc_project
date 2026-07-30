@@ -1,0 +1,16 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Eslesmis karsilastirmalar, macro F1 -- schz\_keepghost}
+  \label{tab:tests_schz_keepghost}
+  \small
+  \begin{tabular}{llrrrrrr}
+    \toprule
+    A & B & mean\_diff & cohens\_d & p\_corrected\_ttest & p\_ttest\_holm & p\_wilcoxon & p\_wilcoxon\_holm \\
+    \midrule
+    Tucker+MLP & Tucker+LogReg & 0.0548 & 0.7097 & 0.2278 & 0.4557 & 0.0157 & 0.0313 \\
+    Tucker+MLP & PCA+MLP & 0.2525 & 1.3943 & 0.0266 & 0.0798 & 0.0012 & 0.0037 \\
+    Tucker+MLP & Voxel-MLP & 0.0205 & 0.2533 & 0.6596 & 0.6596 & 0.5098 & 0.5098 \\
+    Tucker+MLP & Dummy & 0.1597 & 1.7687 & 0.0072 & 0.0288 & 0.0001 & 0.0005 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

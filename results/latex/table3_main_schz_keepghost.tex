@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Capraz dogrulama performansi (fold ortalamasi $\pm$ sd) -- schz\_keepghost}
+  \label{tab:main_schz_keepghost}
+  \small
+  \begin{tabular}{llllll}
+    \toprule
+    method & balanced\_accuracy & f1\_macro & auc & accuracy & kappa \\
+    \midrule
+    Tucker+MLP & 0.701 $\pm$ 0.068 & 0.685 $\pm$ 0.056 & 0.766 $\pm$ 0.081 & 0.735 $\pm$ 0.050 & 0.380 $\pm$ 0.112 \\
+    Tucker+LogReg & 0.636 $\pm$ 0.068 & 0.631 $\pm$ 0.071 & 0.710 $\pm$ 0.069 & 0.709 $\pm$ 0.054 & 0.273 $\pm$ 0.132 \\
+    PCA+MLP & 0.561 $\pm$ 0.097 & 0.433 $\pm$ 0.187 & 0.637 $\pm$ 0.131 & 0.530 $\pm$ 0.210 & 0.113 $\pm$ 0.193 \\
+    Voxel-MLP & 0.688 $\pm$ 0.083 & 0.665 $\pm$ 0.084 & 0.763 $\pm$ 0.091 & 0.703 $\pm$ 0.085 & 0.345 $\pm$ 0.160 \\
+    Dummy & 0.529 $\pm$ 0.067 & 0.526 $\pm$ 0.069 & 0.529 $\pm$ 0.067 & 0.621 $\pm$ 0.062 & 0.058 $\pm$ 0.137 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
