@@ -169,21 +169,61 @@ python step1_build_tensor_dataset.py --bids-dir data/ds000030 --size 64 --n-jobs
 > `--n-jobs` işlem başına ~0.5 GB RAM ister. 16 GB'de 4–6 rahat.
 > RAM sıkıntısı olursa `--size 48` kullan (hacim 2.4× küçülür).
 
-### Adım 2 — Deneyler (~20–45 dk / görev)
+### Adım 2 — Bütün analizleri tek komutla çalıştır
 
 ```bash
+python run_all.py --bids-dir data/ds000030
+```
+
+Bu, aşağıdakilerin hepsini sırayla çalıştırır:
+
+| | Ne yapar |
+|---|---|
+| ADIM 1 | Tensör veri setini kurar — iki kez: ana küme (hayaletliler elenmiş) ve duyarlılık kümesi (`--keep-ghost`, `derivatives_ghost/`) |
+| ADIM 2 | Her görev için Tucker+MLP, baseline'lar, istatistik, figürler, rank taraması |
+| ADIM 3 | Karıştırıcı ve seçim yanlılığı kontrolleri |
+| ADIM 4 | Kovaryant regresyonu + tarayıcı-dışı genelleme |
+| ADIM 5 | Hepsini tek rapora toplar (`THESIS_REPORT.md` + LaTeX tablolar) |
+
+Varsayılan koşular: `schz_vs_control`, `patient_vs_control`, `4class` (ana küme)
+ve `schz_keepghost` (duyarlılık analizi).
+
+Yararlı seçenekler:
+
+```bash
+# Ön işleme zaten yapıldıysa atla
+python run_all.py --bids-dir data/ds000030 --skip-step1
+
+# Hızlı sürüm: tek görev, az tekrar, rank taraması ve duyarlılık koşusu yok
+python run_all.py --bids-dir data/ds000030 --tasks schz_vs_control \
+    --repeats 2 --no-rank-sweep --no-ghost-run
+
+# Sadece raporu yeniden üret (analiz yapmaz, saniyeler sürer)
+python run_all.py --only-report
+
+# Ne çalıştırılacağını görmek için (hiçbir şey çalıştırmaz)
+python run_all.py --dry-run
+
+# RAM sıkışırsa
+python run_all.py --bids-dir data/ds000030 --size 48 --skip-pca
+```
+
+Bir koşu hata verirse pipeline **durmaz**; sonundaki özet tabloda hangi
+adımın başarısız olduğu ve ne kadar sürdüğü görünür. Başarısız adımı tek
+başına tekrar çalıştırabilirsin — komut satırları ekranda basılıyor.
+
+### Tek tek çalıştırmak istersen
+
+```bash
+python step1_build_tensor_dataset.py --bids-dir data/ds000030 --size 64 --n-jobs 4
 python step2_run_experiments.py --task schz_vs_control --ranks 8 8 8 --repeats 3
-python step2_run_experiments.py --task 4class          --ranks 8 8 8 --repeats 3
+python step3_confound_checks.py --bids-dir data/ds000030 --task schz_vs_control
+python step4_deconfound.py --task schz_vs_control
+python step5_make_report.py
 ```
 
-Ya da hepsi birden:
-
-```bash
-python run_all.py --bids-dir data/ds000030 --size 64 --n-jobs 4 --rank-sweep
-```
-
-Görevler: `schz_vs_control` (ikili), `patient_vs_control` (ikili),
-`4class` (CONTROL / SCHZ / BIPOLAR / ADHD).
+Görevler: `schz_vs_control`, `patient_vs_control`, `4class`.
+`--tag` ile her koşunun çıktıları ayrı dosyalara yazılır (step2/3/4'te var).
 
 ---
 
@@ -307,6 +347,9 @@ step0_download_t1w.py        OpenNeuro'dan sadece T1w indirir
 step0_make_synthetic_bids.py sahte BIDS üretir (duman testi)
 step1_build_tensor_dataset.py  T1w → (N,64,64,64) tensor
 step2_run_experiments.py     CV + Tucker+MLP + baseline'lar + istatistik + figürler
+step3_confound_checks.py     seçim yanlılığı + demografi baseline + öznitelik içeriği
+step4_deconfound.py          kovaryant regresyonu + tarayıcı-dışı genelleme
+step5_make_report.py         tüm sonuçları teze hazır md + LaTeX tablolara toplar
 run_all.py                   hepsini sırayla çalıştırır
 tnn/
   config.py         tüm ayarlar tek yerde
@@ -329,7 +372,152 @@ gibi 6 test çalıştırır.)
 
 ---
 
-## 11. Kaynaklar
+## 11. Adım 3 — karıştırıcı (confound) kontrolleri
+
+`step2` bir performans sayısı verir. `step3` o sayının **nereden geldiğini**
+sorar — savunmada sorulacak dört soru:
+
+```bash
+python step3_confound_checks.py --bids-dir data/ds000030 --task schz_vs_control
+python step3_confound_checks.py --bids-dir data/ds000030 --task 4class
+```
+
+| Kontrol | Soru | Neden kritik |
+|---|---|---|
+| **A** | Hayalet artefaktı elemesi tanıya göre yanlı mı? (ki-kare) | Yanlıysa seçim yanlılığı var; `--keep-ghost` duyarlılık analizi şart |
+| **B** | Gruplar yaş / cinsiyet / tarayıcı bakımından dengeli mi? | Değilse model tanıdan çok demografiyi öğreniyor olabilir |
+| **C** | **Sadece demografiyle** (yaş+cinsiyet+tarayıcı, hiç görüntü yok) aynı fold'larda ne alınır? | MR'ın demografinin üstüne ne kattığını ölçen tek dürüst test |
+| **D** | Tucker öznitelikleri neyi kodluyor — yaş mı, tarayıcı mı, tanı mı? | Öznitelikler tanıyı değil nuisance değişkenleri taşıyor olabilir |
+
+Çıktılar: `results/confound_report_<görev>.md`,
+`results/tables/confound_*.csv`, `results/figures/fig14_feature_content_*.png`.
+
+**Nasıl okunacak:** C adımında hiçbir görüntü yöntemi demografi baseline'ını
+anlamlı olarak geçemiyorsa, bildirilen başarı büyük ölçüde demografik
+farklardan kaynaklanıyor olabilir — bunu sınırlılık olarak yazmak zorundasın.
+D adımında yaş için CV R² değeri tanı için elde edilen değerden yüksekse,
+öznitelikler ağırlıkla yaşı kodluyor demektir.
+
+---
+
+## 12. Önerilen ek koşular
+
+```bash
+# 1. Hayalet elemesi duyarlılık analizi (örneklem ~217 -> ~265)
+python step1_build_tensor_dataset.py --bids-dir data/ds000030 --size 64 \
+    --n-jobs 4 --keep-ghost --out-dir derivatives_ghost
+python step2_run_experiments.py --deriv-dir derivatives_ghost --size 64 \
+    --task schz_vs_control --tag schz_keepghost
+
+# 2. En dengeli kontrast (~107 hasta vs ~110 kontrol) -- en yüksek güç
+python step2_run_experiments.py --size 64 --task patient_vs_control --repeats 5
+
+# 3. Aşırı öğrenmeyi test et: daha küçük rank
+python step2_run_experiments.py --size 64 --task 4class --ranks 4 4 4 \
+    --tag 4class_r4
+
+# 4. HOSVD vs HOOI ablasyonu -- tnn/config.py içinde MPCA_N_ITER = 0 yap
+```
+
+`--tag` her koşunun çıktılarını ayrı dosyalara yazar (step2, step3 ve step4'te var), böylece birbirini
+ezmezler.
+
+---
+
+## 13. Adım 4 — karıştırıcılardan arındırılmış analiz
+
+`step3` bir karıştırıcı bulursa (bu veri setinde buluyor), `step4` şu tek
+soruyu yanıtlar: **yaş, cinsiyet ve tarayıcı etkisi özniteliklerden
+çıkarıldıktan sonra beyinde tanı hakkında sinyal kalıyor mu?**
+
+```bash
+python step4_deconfound.py --size 64 --task schz_vs_control
+python step4_deconfound.py --size 64 --task 4class
+```
+
+Üç analiz yapar:
+
+1. **Kovaryant regresyonu (residualization).** Her öznitelik için
+   `f = b₀ + b₁·yaş + b₂·cinsiyet + b₃·tarayıcı + e` modeli **sadece eğitim
+   verisiyle** kurulur, sınıflandırmada artık `e` kullanılır.
+2. **Karşılaştırmalı yöntem seti** (aynı fold'lar, eşleşmiş testler):
+   ham Tucker · arındırılmış Tucker · sadece demografi ·
+   görüntü+demografi birleşik · çoğunluk sınıfı dummy.
+   Her yöntem için dengeli doğruluğun şans seviyesinden anlamlı yüksek olup
+   olmadığı tek-örneklemli düzeltilmiş t-testiyle sınanır.
+3. **Tarayıcı-dışı genelleme (leave-one-scanner-out).** Bir tarayıcıda eğit,
+   diğerinde test et. Model anatomi öğrendiyse tarayıcı değişince de
+   çalışmalı; site etkisi öğrendiyse çöker.
+
+Çıktı: `results/deconfound_report_<görev>.md`,
+`results/tables/deconf_*.csv`, `results/figures/fig15_deconfound_*.png`.
+
+
+### Raporlama notu — güven aralıkları
+
+`step4`'ün verdiği %95 güven aralıkları **Nadeau–Bengio düzeltmelidir**, yani
+p-değerleriyle aynı varsayımları paylaşır. Düz t-aralığı (`sd/√k`) fold'ların
+bağımsız olduğunu varsayar; tekrarlı CV'de eğitim kümeleri örtüştüğü için bu
+aralık gerçekte olduğundan **dar** çıkar ve düzeltilmiş p-değeriyle çelişebilir
+(aralık şansı dışlarken p anlamsız kalabilir). Düzeltilmemiş dar aralıklar
+karşılaştırma için CSV'de `*_uncorrected` sütunlarında saklanır — **tezde
+düzeltilmiş olanı kullan.**
+
+### LOSO'da birincil ölçüt AUC
+
+Tarayıcıların sınıf dağılımları çok farklı olduğu için `argmax` kararı eğitim
+önselini taşır ve dengeli doğruluk çökebilirken AUC sağlam kalır (önsel kayması
+/ prior shift). `step4` bu yüzden hem ham hem **önsel-düzeltilmiş** dengeli
+doğruluğu (posterior eğitim önseline bölünür — test etiketleri kullanılmaz)
+hem AUC'yi raporlar ve yorumunu **AUC'ye** dayandırır.
+
+### Kavramsal uyarı — bunu rapora yaz
+
+Tarayıcı ile tanı bu veri setinde güçlü ilişkili (χ²=21.7, p<0.001).
+İlişkili bir değişkeni regresyonla çıkarmak tanı sinyalinin bir kısmını da
+siler (**over-correction**). Dolayısıyla arındırılmış sonuç bir **alt sınır**dır:
+
+- Arındırmadan sonra hâlâ şanstan anlamlı yüksekse → site ile açıklanamayan
+  bir yapısal sinyal var.
+- Şanstan ayırt edilemiyorsa → *"bu örneklemde doğrusal karıştırıcı etkileri
+  çıkarıldığında ölçülebilir bir yapısal tanı sinyali kalmıyor"*. Bu geçerli
+  bir bulgudur; yöntemin kötü olduğu anlamına gelmez.
+
+`step4`'ün doğru çalıştığı iki sentetik senaryoyla doğrulandı: gerçek sinyal
+varken arındırma sonrası sinyali koruyor (p<0.001), sinyal yalnızca site
+etkisinden geliyorken arındırma sonrası şans seviyesine düşüyor (p=0.12).
+
+---
+
+## 14. Adım 5 — teze hazır birleşik rapor
+
+step1-4 sonuçları 15+ CSV'ye dağılır. `step5` hepsini tarayıp tek bir rapora
+toplar:
+
+```bash
+python step5_make_report.py --size 64
+```
+
+Çıktılar:
+
+| Dosya | İçerik |
+|---|---|
+| `results/THESIS_REPORT.md` | Numaralanmış markdown tablolar + olgusal bulgu listesi |
+| `results/latex/*.tex` | Aynı tabloların booktabs sürümü (`\input{}` ile teze eklenir) |
+
+Etiketleri (`--tag`) otomatik bulur, yani ek koşular yaptıysan onlar da rapora
+girer. Eksik dosyalar sessizce atlanır — kısmi sonuçlarla da çalışır.
+
+LaTeX tabloları `\usepackage{booktabs}` gerektirir ve pdfLaTeX uyumludur
+(Unicode karakterler `$\pm$`, `$<$` gibi matematik moduna çevrilir).
+
+**Bu script yeni analiz yapmaz ve yorum üretmez.** Yalnızca mevcut sayıları
+toplar ve p-değerlerine göre koşullu olgusal cümleler kurar ("… p=0.0806 →
+anlamlı değil"). Tartışma bölümünü sen yazacaksın; bunlar hazır malzeme.
+
+---
+
+## 15. Kaynaklar
 
 - Poldrack et al. (2016). *A phenome-wide examination of neural and cognitive
   function.* Scientific Data 3:160110. — ds000030'un veri makalesi, **atıf ver**.

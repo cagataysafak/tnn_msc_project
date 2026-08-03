@@ -1,0 +1,16 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Butun kosularin ozeti (dengeli dogruluk)}
+  \label{tab:master}
+  \small
+  \begin{tabular}{lrrrrrrrr}
+    \toprule
+    kosu & n & Tucker+MLP & Voxel-MLP & arinmis & arinmis\_p & demografi & goruntu-demografi & LOSO AUC \\
+    \midrule
+    4class & 217 & 0.396 & 0.381 & 0.346 & 0.004 & 0.356 & 0.039 & 0.613 \\
+    patient\_vs\_control & 217 & 0.544 & 0.603 & 0.535 & 0.110 & 0.667 & -0.123 & 0.513 \\
+    schz\_keepghost & 175 & 0.701 & 0.688 & 0.637 & 0.003 & 0.693 & 0.007 & 0.749 \\
+    schz\_vs\_control & 140 & 0.656 & 0.637 & 0.588 & 0.081 & 0.743 & -0.087 & 0.776 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

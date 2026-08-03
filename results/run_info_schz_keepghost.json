@@ -37,5 +37,5 @@
     "val_fraction": 0.15
   },
   "seed": 42,
-  "runtime_sec": 116.3
+  "runtime_sec": 109.1
 }

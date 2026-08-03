@@ -1,0 +1,14 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Tarayici-disi genelleme (leave-one-scanner-out) -- 4class. Birincil olcut AUC; dengeli dogruluk onsel kaymasina duyarlidir.}
+  \label{tab:loso_4class}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    test\_scanner & n\_train & n\_test & balanced\_accuracy & balanced\_accuracy\_prior\_adj & f1\_macro & auc \\
+    \midrule
+    35343.000 & 78.000 & 139.000 & 0.319 & 0.296 & 0.232 & 0.612 \\
+    35426.000 & 139.000 & 78.000 & 0.274 & 0.361 & 0.242 & 0.614 \\
+    \bottomrule
+  \end{tabular}
+\end{table}

@@ -21,7 +21,7 @@
     8
   ],
   "n_tucker_features": 512,
-  "cv": "5-fold x 5",
+  "cv": "5-fold x 3",
   "nn_backend": "PyTorch 2.13.0+cpu",
   "mlp_params": {
     "hidden": [
@@ -37,5 +37,5 @@
     "val_fraction": 0.15
   },
   "seed": 42,
-  "runtime_sec": 271.9
+  "runtime_sec": 317.7
 }

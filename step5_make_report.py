@@ -110,6 +110,13 @@ def main() -> int:
     tex = res / "latex"
     tex.mkdir(parents=True, exist_ok=True)
 
+    # ESKI .tex DOSYALARINI SIL.
+    # Tablo numaralari kosu sayisina gore degisir; onceki calistirmadan kalan
+    # dosyalar silinmezse teze YANLIS/ESKI tablo \input edilebilir.
+    stale = sorted(tex.glob("*.tex"))
+    for f in stale:
+        f.unlink()
+
     if not tab.is_dir():
         print(f"HATA: {tab} yok. Once step2 (ve varsa step3/step4) calistir.")
         return 1
@@ -135,6 +142,59 @@ def main() -> int:
           f"Kosular: {', '.join('`' + t + '`' for t in all_tags)}", ""]
     findings = []
     tno = 0
+
+    # ---------------- ANA TABLO: kosular arasi ozet -----------------------
+    master = []
+    for t in all_tags:
+        sm = _read(tab / f"summary_{t}.csv")
+        dc = _read(tab / f"deconf_summary_{t}.csv")
+        lo = _read(tab / f"deconf_loso_{t}.csv")
+        fm = _read(tab / f"fold_metrics_{t}.csv")
+        row = {"kosu": t}
+
+        if fm is not None and {"n_train", "n_test"} <= set(fm.columns):
+            row["n"] = int(fm["n_train"].iloc[0] + fm["n_test"].iloc[0])
+
+        def _pick(frame, method, col):
+            if frame is None or "method" not in frame.columns:
+                return np.nan
+            s = frame.loc[frame["method"] == method, col]
+            return float(s.iloc[0]) if len(s) and col in frame.columns else np.nan
+
+        row["Tucker+MLP"] = _pick(sm, "Tucker+MLP", "balanced_accuracy")
+        row["Voxel-MLP"] = _pick(sm, "Voxel-MLP", "balanced_accuracy")
+        row["arinmis"] = _pick(dc, "Tucker(arinmis)+MLP", "balanced_accuracy")
+        row["arinmis_p"] = _pick(dc, "Tucker(arinmis)+MLP", "p_vs_chance")
+        row["demografi"] = _pick(dc, "Demo+LogReg", "balanced_accuracy")
+        if np.isfinite(row["Tucker+MLP"]) and np.isfinite(row["demografi"]):
+            row["goruntu-demografi"] = row["Tucker+MLP"] - row["demografi"]
+        row["LOSO AUC"] = (float(lo["auc"].mean())
+                           if lo is not None and "auc" in lo.columns and len(lo)
+                           else np.nan)
+        master.append(row)
+
+    if master:
+        mdf = pd.DataFrame(master)
+        cols = [c for c in ["kosu", "n", "Tucker+MLP", "Voxel-MLP", "arinmis",
+                            "arinmis_p", "demografi", "goruntu-demografi",
+                            "LOSO AUC"] if c in mdf.columns]
+        mdf = mdf[cols]
+        tno += 1
+        cap = ("Butun kosularin ozeti. Degerler dengeli dogruluktur; "
+               "`arinmis_p` arindirilmis modelin sans seviyesine karsi "
+               "tek yonlu duzeltilmis p-degeridir.")
+        md += [f"## Tablo {tno}. {cap}", "", md_table(mdf), "",
+               "*Sans seviyesi: ikili gorevlerde 0.500, 4 sinifta 0.250.*", ""]
+        (tex / f"table{tno}_master.tex").write_text(
+            to_latex(mdf, "Butun kosularin ozeti (dengeli dogruluk)",
+                     "tab:master"), encoding="utf-8")
+
+        for _, r in mdf.iterrows():
+            if "goruntu-demografi" in r and np.isfinite(r["goruntu-demografi"]):
+                sign = "gecti" if r["goruntu-demografi"] > 0 else "GECEMEDI"
+                findings.append(
+                    f"[{r['kosu']}] Goruntu, demografi baseline'ini {sign} "
+                    f"({r['goruntu-demografi']:+.3f} dengeli dogruluk).")
 
     # ---------------- Tablo 1: ornek karakteristikleri -------------------
     for t in all_tags:
@@ -354,10 +414,16 @@ def main() -> int:
     out_md = res / "THESIS_REPORT.md"
     out_md.write_text("\n".join(md), encoding="utf-8")
 
+    if stale:
+        print(f"\n({len(stale)} eski .tex dosyasi silindi)")
     print(f"\n{tno} tablo uretildi.")
     print(f"{len(findings)} olgusal bulgu cikarildi.")
     print(f"\nMarkdown : {out_md}")
-    print(f"LaTeX    : {tex}  ({len(list(tex.glob('*.tex')))} dosya)")
+    n_tex = len(list(tex.glob("*.tex")))
+    print(f"LaTeX    : {tex}  ({n_tex} dosya)")
+    if n_tex != tno:
+        print(f"  UYARI: tablo sayisi ({tno}) ile .tex dosya sayisi "
+              f"({n_tex}) uyusmuyor.")
     print("\nOnizleme -- bulgular:")
     for f in findings[:12]:
         print("  * " + f.replace("**", ""))

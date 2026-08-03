@@ -1,0 +1,14 @@
+\begin{table}[htbp]
+  \centering
+  \caption{Tarayici-disi genelleme (leave-one-scanner-out) -- schz\_vs\_control. Birincil olcut AUC; dengeli dogruluk onsel kaymasina duyarlidir.}
+  \label{tab:loso_schz_vs_control}
+  \small
+  \begin{tabular}{lrrrrrr}
+    \toprule
+    test\_scanner & n\_train & n\_test & balanced\_accuracy & balanced\_accuracy\_prior\_adj & f1\_macro & auc \\
+    \midrule
+    35343.000 & 39.000 & 101.000 & 0.770 & 0.759 & 0.614 & 0.795 \\
+    35426.000 & 101.000 & 39.000 & 0.582 & 0.525 & 0.538 & 0.758 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
