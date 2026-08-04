@@ -33,14 +33,11 @@ Diagnosis groups: `CONTROL` (138), `SCHZ` (58), `BIPOLAR` (49), `ADHD` (45).
    (fMRIPrep) — on CPU that's ~1–2 hours per subject, i.e. weeks for 265 subjects.
    For T1w, reasonable spatial normalization is possible without registration software.
 
-> If you want to build an fMRI connectivity tensor, I've described it in §8
-> under "possible extensions" — but that's for after the MSc project submission.
-
 ---
 
 ## 2. Methodology — why exactly "Tucker + MLP" and not something else?
 
-Your proposed Tucker + MLP idea is correct. I refined it in two places:
+Tucker + MLP pipeline refined in two places:
 
 ### 2.1 **Partial Tucker (MPCA)** instead of full Tucker
 
@@ -74,8 +71,7 @@ artificially inflates performance.
 
 In this project, `MPCA.fit()` is called **only on the training split** within
 **each fold**; the test split is only ever `transform()`-ed. The same rule
-applies to `StandardScaler` and `PCA`. Be sure to emphasize this in your
-report — the committee will ask about it.
+applies to `StandardScaler` and `PCA`.
 
 ### 2.3 Methods compared
 
@@ -277,14 +273,14 @@ numpy/scipy, **without** registration software:
 6. **Intensity scaling by the 99th percentile within the mask** → reduces
    scanner-to-scanner differences.
 
-### Limitations (make sure to include these in your report)
+### Limitations
 
 - This is **not full MNI registration**. Voxel-level anatomical correspondence
   across subjects is approximate; fine structural differences get blurred.
 - The Otsu mask also includes the skull and scalp (this is not true
   *skull-stripping*). Could be improved with FSL BET / ANTs.
 - Because head size is normalized, **brain volume difference information is
-  lost** — which is actually a known marker in schizophrenia. You could skip
+  lost** — which is actually a known marker in schizophrenia. We could skip
   the `pad_to_cube_mm` step and use a fixed mm box instead to preserve this
   information (would make for a nice ablation experiment).
 - ~20% of ds000030 has ghosting (aliasing) artifacts in the T1w scans; by
@@ -315,7 +311,7 @@ if 68% of the classes are CONTROL, the model may have learned nothing.
 
 ## 8. Possible extensions (optional)
 
-1. **Rank ablation** — `--rank-sweep` already exists; include `fig13` in the report.
+1. **Rank ablation** — `--rank-sweep` already exists.
 2. **HOSVD vs HOOI** — set `MPCA_N_ITER = 0` in `tnn/config.py` and re-run.
 3. **CP (PARAFAC) decomposition** — compare against Tucker.
 4. **3D CNN** — instead of MLP; slow on CPU but feasible with `--size 48`.
@@ -468,8 +464,7 @@ t-interval (`sd/√k`) assumes the folds are independent; since training sets
 overlap in repeated CV, this interval comes out **narrower** than it actually
 is and can contradict the corrected p-value (the interval may exclude chance
 while p remains non-significant). The uncorrected narrow intervals are kept
-in the CSV under `*_uncorrected` columns for comparison — **use the corrected
-one in the thesis.**
+in the CSV under `*_uncorrected` columns for comparison.
 
 ### AUC is the primary metric in LOSO
 
@@ -480,7 +475,7 @@ raw and the **prior-corrected** balanced accuracy (the posterior is divided
 by the training prior — test labels are not used) as well as AUC, and bases
 its interpretation on **AUC**.
 
-### A conceptual warning — put this in the report
+### A conceptual warning
 
 Scanner and diagnosis are strongly associated in this dataset (χ²=21.7,
 p<0.001). Regressing out a variable that is associated with the outcome also
@@ -500,7 +495,7 @@ level after deconfounding (p=0.12).
 
 ---
 
-## 14. Step 5 — thesis-ready combined report
+## 14. Step 5 — report generation (not finished)
 
 The results from steps 1–4 are spread across 15+ CSV files. `step5` scans
 all of them and collects everything into a single report:
@@ -514,7 +509,7 @@ Outputs:
 | File | Contents |
 |---|---|
 | `results/THESIS_REPORT.md` | Numbered markdown tables + a list of factual findings |
-| `results/latex/*.tex` | Booktabs version of the same tables (added to the thesis via `\input{}`) |
+| `results/latex/*.tex` | Booktabs version of the same tables (added via `\input{}`) |
 
 Tags (`--tag`) are found automatically, so if you ran additional runs, they
 will also appear in the report. Missing files are silently skipped — it also
@@ -525,5 +520,4 @@ The LaTeX tables require `\usepackage{booktabs}` and are pdfLaTeX-compatible
 
 **This script does not perform new analysis and does not generate
 interpretation.** It only aggregates existing numbers and builds conditional
-factual sentences based on p-values ("… p=0.0806 → not significant"). You
-will write the discussion section yourself; these are ready-made materials.
+factual sentences based on p-values ("… p=0.0806 → not significant").
